@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>FILMBul</title>
+  <style>
+    body {
+      margin: 0; padding: 40px;
+      font-family: 'Roboto', sans-serif;
+      background-color: #0d0d0d;
+      color: #f0f0f0;
+    }
+
+   h1 {
+  font-family: 'Orbitron', sans-serif;
+  color: rgb(236, 12, 12);
+  text-shadow: 0 0 10px rgb(255, 0, 34);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+    
+    .container {
+      max-width: 900px;
+      margin: auto;
+      border-radius: 12px;
+      padding: 30px;
+      background-color: #5c1c1c;
+      box-shadow: 0 0 20px rgba(192, 26, 26, 0.7);
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+    }
+    input {
+      width: 60%;
+      background-color: #222;
+      color: rgb(255, 0, 0);
+    }
+    button {
+      font-weight: bold;
+      cursor: pointer;
+      background-color: rgb(163, 15, 15);
+      color: white;
+      margin-left: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .poster-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+      background-color: #222;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .poster-card:hover {
+      transform: scale(1.05);
+    }
+    .poster-card img {
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+    }
+    .poster-title {
+      text-align: center;
+      background: rgba(0,0,0,0.75);
+      color: red;
+      font-weight: bold;
+      padding: 5px 0;
+      font-size: 14px;
+    }
+    .detail {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid rgba(221, 18, 18, 0.73);
+      display: flex;
+      gap: 20px;
+    }
+    .detail img {
+      width: 220px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      color: black;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+    .modal-content input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      color: rgb(252, 251, 251);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const getFavorites = (username) =>{
+      const allFavs = JSON.parse (localStorage.getItem("favorites")) || {};
+      return allFavs[username] || [];
+
+    }
+
+    const saveFavorite = (username , movie) => {
+      const allFavs = JSON.parse ( localStorage.getItem("favorites")) || {};
+      const userFavs = allFavs[username] || [];
+
+      const isExist = userFavs.some (m => m.id === movie.id);
+      if (!isExist){
+        userFavs.push(movie);
+        allFavs[username] = userFavs;
+        localStorage.setItem("favorites",JSON.stringify(allFavs));
+        setMessage("Favorilere Eklendi !!!");
+        setTimeout(() => setMessage ("") ,3000 );
+
+      }
+
+
+    };
+
+    const removeFavorite = (username , movieId) =>{
+      const allFavs = JSON.parse (localStorage.getItem("favorites")) || {};
+      const userFavs = allFavs[username] || [];
+      allFavs[username] = userFavs.filter(m => m.id !== movieId);
+      localStorage.setItem("favorites" , JSON.stringify(allFavs));
+
+
+    };
+
+
+
+    
+    const getUsersFromStorage = () => {
+      return JSON.parse(localStorage.getItem("users")) || [];
+    };
+
+    
+    const saveUserToStorage = (user) => {
+      const users = getUsersFromStorage();
+      users.push(user);
+      localStorage.setItem("users", JSON.stringify(users));
+    };
+
+    const userExists = (username) => {
+      return getUsersFromStorage().some(u => u.name === username);
+    };
+
+    const validateLogin = (username, password) => {
+      return getUsersFromStorage().find(u => u.name === username && u.password === password);
+    };
+
+    function LoginForm({ onLogin }) {
+      const [username, setUsername] = useState("");
+      const [password, setPassword] = useState("");
+
+      const handleLogin = () => {
+        if (!username || !password) {
+          alert("Boş bırakmayın.");
+          return;
+        }
+
+        const validUser = validateLogin(username, password);
+        if (validUser) {
+          onLogin(validUser);
+        } else {
+          alert("Geçersiz kullanıcı bilgisi.");
+        }
+      };
+
+      return (
+        <>
+          <input placeholder="Kullanıcı Adı" value={username} onChange={e => setUsername(e.target.value)} />
+          <input type="password" placeholder="Şifre" value={password} onChange={e => setPassword(e.target.value)} />
+          <button onClick={handleLogin}>Giriş Yap</button>
+        </>
+      );
+    }
+
+    
+    function RegisterForm({ onRegister }) {
+      const [username, setUsername] = useState("");
+      const [password, setPassword] = useState("");
+
+      const handleRegister = () => {
+        if (!username || !password) {
+          alert("Boş alan kalmasın.");
+          return;
+        }
+
+        if (userExists(username)) {
+          alert("Kullanıcı zaten kayıtlı.");
+          return;
+        }
+
+        const newUser = { name: username, password };
+        saveUserToStorage(newUser);
+        onRegister(newUser);
+      };
+
+      return (
+        <>
+          <input placeholder="Kullanıcı Adı" value={username} onChange={e => setUsername(e.target.value)} />
+          <input type="password" placeholder="Şifre" value={password} onChange={e => setPassword(e.target.value)} />
+          <button onClick={handleRegister}>Kayıt Ol</button>
+        </>
+      );
+    }
+
+    
+    function App() {
+      const API_KEY = "4ff62a8f77f67ed53a99b551ebad7c46";
+      const [query, setQuery] = useState("");
+      const [results, setResults] = useState([]);
+      const [selected, setSelected] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [user, setUser] = useState(null);
+      const [showLogin, setShowLogin] = useState(false);
+      const [showRegister, setShowRegister] = useState(false);
+      const [hovered , setHovered] = useState (null);
+      const [showFavorites, setShowFavorites] = useState(false);
+      const [message, setMessage] = useState("");
+
+      const detailRef = useRef(null);
+
+      useEffect(() => { fetchPopular(); }, []);
+
+      useEffect(() => {
+        if (selected && detailRef.current) {
+          detailRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, [selected]);
+
+      const favoriteMovies = user ? getFavorites(user.name) : [];
+
+
+      const saveFavorite = (username , movie) => {
+      const allFavs = JSON.parse ( localStorage.getItem("favorites")) || {};
+      const userFavs = allFavs[username] || [];
+
+      const isExist = userFavs.some (m => m.id === movie.id);
+      if (!isExist){
+        userFavs.push(movie);
+        allFavs[username] = userFavs;
+        localStorage.setItem("favorites",JSON.stringify(allFavs));
+        setMessage("Favorilere Eklendi !!!");
+        setTimeout(() => setMessage ("") ,3000 );
+
+      }
+
+
+    };
+
+
+   
+
+      const fetchPopular = () => {
+        setLoading(true);
+        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=tr-TR`)
+          .then(res => res.json())
+          .then(data => setResults(data.results || []))
+          .catch(() => setError("Sunucu hatası"))
+          .finally(() => setLoading(false));
+      };
+
+      const searchMovies = () => {
+        if (!query.trim()) {
+          alert("Film adı girin");
+          return;
+        }
+        setLoading(true);
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=tr-TR&query=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            setResults(data.results || []);
+            if (data.results.length === 0) setError("Sonuç bulunamadı");
+            else setError(null);
+          })
+          .catch(() => setError("Sunucu hatası"))
+          .finally(() => setLoading(false));
+      };
+
+      const getMovieDetails = (id) => {
+        setLoading(true);
+        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}&language=tr-TR`)
+          .then(res => res.json())
+          .then(data => {
+            fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${API_KEY}&language=tr-TR`)
+              .then(res => res.json())
+              .then(videos => {
+                const trailer = videos.results.find(v => v.type === "Trailer" && v.site === "YouTube");
+                setSelected({...data, trailerKey: trailer ? trailer.key : null});
+              })
+              .catch(() => setSelected(data))
+              .finally(() => setLoading(false));
+          })
+          .catch(() => {
+            setError("Film detayları alınamadı");
+            setLoading(false);
+          });
+      };
+
+      const logout = () => {
+        setUser(null);
+      };
+
+      return (
+        <div className="container">
+          <div className="topbar">
+            <h1>FILMBul</h1>
+
+
+
+            {message && (
+  <div style={{
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    backgroundColor: "#d40000",
+    color: "white",
+    padding: "10px 20px",
+    borderRadius: "8px",
+    boxShadow: "0 0 10px rgba(255,0,0,0.7)",
+    zIndex: 1100,
+  }}>
+    {message}
+  </div>
+)}
+
+
+            {showFavorites && (
+  <div className="modal" onClick={() => setShowFavorites(false)}>
+    <div className="modal-content" style={{ maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+      <h3>Favori Filmlerim</h3>
+      {favoriteMovies.length === 0 && <p>Henüz favoriniz yok.</p>}
+      {favoriteMovies.map(movie => (
+        <div key={movie.id} style={{ marginBottom: "15px", borderBottom: "1px solid #ccc", paddingBottom: "10px" }}>
+          <p><strong>{movie.title}</strong></p>
+          <button
+            onClick={() => {
+              removeFavorite(user.name, movie.id);
+              setShowFavorites(false);
+              setTimeout(() => setShowFavorites(true), 100);
+            }}
+          >
+            ❌ Kaldır
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
+            <div>
+              {!user && (
+                <>
+                  <button onClick={() => { setShowLogin(true); setShowRegister(false); }}>Giriş Yap</button>
+                  <button onClick={() => { setShowRegister(true); setShowLogin(false); }}>Kayıt Ol</button>
+                </>
+              )}
+              {user && (
+                <>
+                <button onClick = {() => setShowFavorites(true)} > Favorilerim </button>
+                  <span style={{marginRight: "15px"}}>Hoş geldin, {user.name}</span>
+                  <button onClick={logout}>Çıkış Yap</button>
+                </>
+              )}
+            </div>
+          </div>
+
+          
+
+          {showLogin && (
+            <div className="modal" onClick={() => setShowLogin(false)}>
+              <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <h3>Giriş Yap</h3>
+                <LoginForm onLogin={(u) => { setUser(u); setShowLogin(false); }} />
+                <button style={{marginTop: "10px"}} onClick={() => { setShowLogin(false); setShowRegister(true); }}>Kayıt Ol</button>
+              </div>
+            </div>
+          )}
+
+          {showRegister && (
+            <div className="modal" onClick={() => setShowRegister(false)}>
+              <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <h3>Kayıt Ol</h3>
+                <RegisterForm onRegister={(u) => { setUser(u); setShowRegister(false); }} />
+                <button style={{marginTop: "10px"}} onClick={() => { setShowRegister(false); setShowLogin(true); }}>Giriş Yap</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{marginBottom: "20px"}}>
+            <input
+              placeholder="Film veya dizi adı yaz..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && searchMovies()}
+            />
+            <button onClick={searchMovies}>Ara</button>
+            <button onClick={fetchPopular}>Popüler Filmler</button>
+          </div>
+
+          {loading && <div style={{textAlign: "center", color: "red"}}>Yükleniyor...</div>}
+          {error && <div style={{textAlign: "center", color: "red"}}>{error}</div>}
+
+          <div className="grid">
+            {results.map(movie => (
+              <div
+                key={movie.id}
+                className="poster-card"
+                onClick={() => getMovieDetails(movie.id)}
+                title={`${movie.title} (${movie.release_date ? movie.release_date.slice(0,4) : ''})`}
+                onMouseEnter= {() => setHovered (movie.id) }
+                onMouseLeave = {() => setHovered (null)}
+              >
+                <img
+                  src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "https://via.placeholder.com/140x210?text=No+Image"}
+                  alt={movie.title}
+                />
+                <div className="poster-title">{movie.title}</div>
+                {user && hovered === movie.id &&(
+        <button
+  onClick={(e) => {
+    e.stopPropagation(); // Detay açılmasın
+    saveFavorite(user.name, movie);
+  }}
+  style={{
+    position: "absolute",
+    bottom: "50px",
+    left: "45%",
+    transform: "translateX(-50%)",
+    backgroundColor: "#d40000",
+    color: "white",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "8px"
+  }}
+>
+  ❤️ Favorilere Ekle
+</button>
+
+
+                )}
+              </div>
+            ))}
+          </div>
+
+          {selected && (
+            <div className="detail" ref={detailRef}>
+              
+              <img
+                src={selected.poster_path ? `https://image.tmdb.org/t/p/w500${selected.poster_path}` : "https://via.placeholder.com/220x330?text=No+Image"}
+                alt={selected.title}
+              />
+              <div>
+                <h2>{selected.title} ({selected.release_date ? selected.release_date.slice(0,4) : ''})</h2>
+                <p><strong>Tür:</strong> {selected.genres?.map(g => g.name).join(", ")}</p>
+                <p><strong>Süre:</strong> {selected.runtime} dk</p>
+                <p><strong>Konu:</strong> {selected.overview}</p>
+                {selected.imdb_id && (
+                  <p><a href={`https://www.imdb.com/title/${selected.imdb_id}`} target="_blank" rel="noopener noreferrer">IMDb'de Gör</a></p>
+                )}
+                {selected.trailerKey && (
+                  <p><a href={`https://www.youtube.com/watch?v=${selected.trailerKey}`} target="_blank" rel="noopener noreferrer">🎬 Fragmanı İzle</a></p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    
+
+   
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
