@@ -16,3 +16,26 @@ FILMBul, kullanıcıların popüler filmleri görüntüleyip arama yapabildiği 
 - JavaScript (React.js + Babel CDN)
 - TMDB API
 - localStorage (veri kaydı için)
+
+
+
+
+  🎬 FILMBul
+
+FILMBul is a simple React-based movie search application where users can view popular movies, search for specific titles, and save their favorite ones. It is built using the TMDB API.
+
+## Features
+
+-  Search for movies (via TMDB API)
+-  Add or remove favorite movies (stored with localStorage)
+-  User login and registration system (localStorage-based)
+-  View popular movies
+-  See detailed movie info and trailer links
+
+
+## Technologies Used
+
+- HTML, CSS
+- JavaScript (React.js + Babel via CDN)
+- TMDB API
+- localStorage (for storing user and movie data)
